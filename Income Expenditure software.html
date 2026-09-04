@@ -1,0 +1,1598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FinanceHub - Professional Management Accounts System</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- jsPDF & autoTable for Professional PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+    <!-- Tailwind Config for Custom Styling -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        income: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                        },
+                        expense: {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom scrollbars & smooth transitions */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
+        
+        /* Print styles for high-quality report generation */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; color: black !important; }
+            .print-container { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- MAIN APP STRUCTURE -->
+    <div id="app" class="flex h-screen overflow-hidden">
+
+        <!-- SIDEBAR NAVIGATION -->
+        <aside id="sidebar" class="no-print w-64 bg-slate-900 text-slate-300 flex flex-col justify-between transition-all duration-300 z-30 shrink-0">
+            <div>
+                <!-- App Header / Logo -->
+                <div class="h-16 flex items-center justify-between px-6 bg-slate-950 border-b border-slate-800">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                            <i data-lucide="wallet" class="w-5 h-5"></i>
+                        </div>
+                        <div>
+                            <span class="font-bold text-white tracking-wide text-lg block leading-tight">FinanceHub</span>
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Management Accounts</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Company Selector / Info Header -->
+                <div class="p-4 border-b border-slate-800/60 bg-slate-900/50">
+                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Entity</div>
+                    <div id="sidebar-company-name" class="text-sm font-medium text-white truncate">Acme Enterprises Ltd</div>
+                    <div class="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
+                        <span id="sidebar-currency-badge" class="px-1.5 py-0.5 bg-slate-800 rounded font-mono text-[10px] text-brand-500 font-bold">GBP (£)</span>
+                        <span class="text-slate-400">• FY: Apr-Mar</span>
+                    </div>
+                </div>
+
+                <!-- Main Nav Links -->
+                <nav class="p-3 space-y-1">
+                    <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors text-white bg-brand-600/20 text-brand-500">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                        Dashboard
+                    </button>
+                    <button onclick="navigate('transactions')" id="nav-transactions" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white text-slate-400">
+                        <i data-lucide="receipt" class="w-4 h-4"></i>
+                        Transactions
+                    </button>
+                    <button onclick="navigate('reports')" id="nav-reports" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white text-slate-400">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        Reports & Accounts
+                    </button>
+                    <button onclick="navigate('analysis')" id="nav-analysis" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white text-slate-400">
+                        <i data-lucide="line-chart" class="w-4 h-4"></i>
+                        Insights & Trends
+                    </button>
+                    <button onclick="navigate('categories')" id="nav-categories" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white text-slate-400">
+                        <i data-lucide="tags" class="w-4 h-4"></i>
+                        Categories
+                    </button>
+                    <button onclick="navigate('audit')" id="nav-audit" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white text-slate-400">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i>
+                        Audit Trail
+                    </button>
+                    <button onclick="navigate('settings')" id="nav-settings" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-slate-800 hover:text-white text-slate-400">
+                        <i data-lucide="settings" class="w-4 h-4"></i>
+                        Settings
+                    </button>
+                </nav>
+            </div>
+
+            <!-- Sidebar Footer Controls -->
+            <div class="p-3 border-t border-slate-800 space-y-2">
+                <button onclick="clearAllData()" class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-red-950/40 border border-red-800/50 hover:bg-red-900/50 text-red-300 transition-colors">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    Clear All Data
+                </button>
+                <div class="flex items-center justify-between px-2 py-1 text-xs text-slate-400">
+                    <span id="user-role-badge" class="px-2 py-0.5 rounded bg-brand-500/20 text-brand-500 font-medium">Finance Admin</span>
+                    <button onclick="toggleDarkMode()" class="p-1 hover:bg-slate-800 rounded text-slate-400 hover:text-slate-200">
+                        <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+                        <i data-lucide="sun" class="w-4 h-4 hidden dark:inline"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT CONTAINER -->
+        <main class="flex-1 flex flex-col h-full overflow-y-auto bg-slate-50 dark:bg-slate-900 transition-colors">
+            
+            <!-- TOP BAR HEADER -->
+            <header class="no-print h-16 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-6 flex items-center justify-between sticky top-0 z-20 shrink-0">
+                <div class="flex items-center gap-4">
+                    <button onclick="toggleSidebar()" class="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 md:hidden">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <!-- Global Search Bar -->
+                    <div class="relative w-64 md:w-80">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="global-search" onkeyup="handleGlobalSearch(event)" placeholder="Search transactions, reference, category..." class="w-full pl-9 pr-4 py-1.5 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:bg-white dark:focus:bg-slate-900 transition-all text-slate-800 dark:text-slate-200">
+                    </div>
+                </div>
+
+                <!-- Action Toolbar Header Controls -->
+                <div class="flex items-center gap-3">
+                    <!-- Period Selector Dropdown -->
+                    <div class="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <i data-lucide="calendar" class="w-4 h-4 text-slate-500 ml-2 mr-1"></i>
+                        <select id="global-period-select" onchange="changeGlobalPeriod(this.value)" class="bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-2">
+                            <option value="this_month">This Month</option>
+                            <option value="prev_month">Previous Month</option>
+                            <option value="this_quarter">This Quarter</option>
+                            <option value="this_year">This Year (2026)</option>
+                            <option value="prev_year">Previous Year (2025)</option>
+                            <option value="financial_year">Financial Year (2026/27)</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+
+                    <!-- Quick Transaction Entry Buttons -->
+                    <button onclick="openTransactionModal('income')" class="flex items-center gap-1.5 px-3 py-2 bg-income-600 hover:bg-income-700 text-white rounded-lg font-semibold text-sm shadow-sm shadow-income-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span>Add Income</span>
+                    </button>
+                    <button onclick="openTransactionModal('expenditure')" class="flex items-center gap-1.5 px-3 py-2 bg-expense-600 hover:bg-expense-700 text-white rounded-lg font-semibold text-sm shadow-sm shadow-expense-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                        <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                        <span>Add Expenditure</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- DYNAMIC VIEW CONTAINER -->
+            <div id="main-view" class="p-6 max-w-7xl mx-auto w-full space-y-6">
+                <!-- Content dynamically injected here via JS -->
+            </div>
+        </main>
+    </div>
+
+    <!-- TRANSACTION MODAL (Multi-Category Income/Expenditure Form) -->
+    <div id="transaction-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-200 p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden transform scale-95 transition-transform duration-200 border border-slate-200 dark:border-slate-700">
+            <div id="modal-header-bg" class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-2">
+                    <div id="modal-type-icon" class="p-1.5 rounded-lg bg-white/10"></div>
+                    <h3 id="modal-title" class="font-bold text-lg">Add Transaction</h3>
+                </div>
+                <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-white p-1 rounded-lg">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <form id="transaction-form" onsubmit="saveTransaction(event)" class="p-6 space-y-5 overflow-y-auto flex-1">
+                <input type="hidden" id="tx-id">
+                <input type="hidden" id="tx-type">
+
+                <!-- Time Scope Radio Selector: Option A vs Option B -->
+                <div class="bg-slate-50 dark:bg-slate-900/70 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700/80">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">Entry Timing / Scope *</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <label class="flex items-center gap-2.5 p-2.5 rounded-lg border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer hover:border-brand-500 transition-colors">
+                            <input type="radio" name="tx-entry-scope" value="onetime" checked onchange="handleScopeChange()" class="text-brand-600 focus:ring-brand-500">
+                            <div>
+                                <div class="text-xs font-bold text-slate-800 dark:text-slate-100">Option A: One-Time / Current Day</div>
+                                <div class="text-[10px] text-slate-500 dark:text-slate-400">Specific transaction date</div>
+                            </div>
+                        </label>
+                        <label class="flex items-center gap-2.5 p-2.5 rounded-lg border bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 cursor-pointer hover:border-brand-500 transition-colors">
+                            <input type="radio" name="tx-entry-scope" value="monthly" onchange="handleScopeChange()" class="text-brand-600 focus:ring-brand-500">
+                            <div>
+                                <div class="text-xs font-bold text-slate-800 dark:text-slate-100">Option B: Whole Month / Monthly</div>
+                                <div class="text-[10px] text-slate-500 dark:text-slate-400">Applies to entire selected month</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Date Inputs Container -->
+                <div id="scope-onetime-container">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Date *</label>
+                    <input type="date" id="tx-date" required class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <div id="scope-monthly-container" class="grid grid-cols-2 gap-4 hidden">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Month *</label>
+                        <select id="tx-month" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-brand-500">
+                            <option value="01">January</option>
+                            <option value="02">February</option>
+                            <option value="03">March</option>
+                            <option value="04">April</option>
+                            <option value="05">May</option>
+                            <option value="06">June</option>
+                            <option value="07">July</option>
+                            <option value="08">August</option>
+                            <option value="09" selected>September</option>
+                            <option value="10">October</option>
+                            <option value="11">November</option>
+                            <option value="12">December</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Year *</label>
+                        <input type="number" id="tx-year" value="2026" min="2000" max="2100" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm font-semibold focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <!-- MULTI-CATEGORY SELECTION UI -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                            Select Categories & Enter Amounts *
+                        </label>
+                        <span class="text-[11px] text-slate-500">Tick one or multiple existing categories</span>
+                    </div>
+
+                    <!-- Category checkboxes list -->
+                    <div id="multi-category-selection-container" class="max-h-48 overflow-y-auto p-3 border rounded-xl dark:bg-slate-900 dark:border-slate-700 space-y-2 bg-slate-50/50">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <!-- Category allocations & inputs -->
+                    <div class="mt-3 space-y-2">
+                        <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                            Allocated Category Amounts
+                        </div>
+                        <div id="category-allocations-list" class="space-y-2">
+                            <!-- Populated dynamically upon selecting categories -->
+                        </div>
+                    </div>
+
+                    <!-- Entry Calculated Total -->
+                    <div class="mt-4 p-3 rounded-xl bg-slate-100 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <span class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300">Total Entry Amount:</span>
+                        <span id="tx-total-display" class="text-lg font-black font-mono text-brand-600 dark:text-brand-400">£0.00</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label id="lbl-source-supplier" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Customer / Source</label>
+                        <input type="text" id="tx-source" placeholder="Client or Supplier name" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Payment Method</label>
+                        <select id="tx-payment-method" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-brand-500">
+                            <option value="Bank Transfer">Bank Transfer</option>
+                            <option value="Credit Card">Credit Card</option>
+                            <option value="Debit Card">Debit Card</option>
+                            <option value="Direct Debit">Direct Debit</option>
+                            <option value="Cash">Cash</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Reference / Invoice #</label>
+                        <input type="text" id="tx-reference" placeholder="INV-2026-001" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Attachment Reference</label>
+                        <input type="text" id="tx-attachment" placeholder="Receipt_#482.pdf" class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">Description / Notes</label>
+                    <textarea id="tx-description" rows="2" placeholder="Optional context or memo..." class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm focus:ring-2 focus:ring-brand-500"></textarea>
+                </div>
+
+                <div id="edit-reason-container" class="hidden">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400 mb-1">Reason for Change (Audit Trail)</label>
+                    <input type="text" id="tx-edit-reason" placeholder="Correction required due to..." class="w-full px-3 py-2 border border-amber-300 dark:border-amber-700 rounded-lg dark:bg-slate-900 text-sm focus:ring-2 focus:ring-amber-500">
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700">
+                    <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-sm font-semibold hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
+                    <button type="submit" id="modal-submit-btn" class="px-5 py-2 rounded-lg text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 shadow-sm transition-all">Save Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION SCRIPT -->
+    <script>
+        /**
+         * ====================================================================
+         * FINANCEHUB - MANAGEMENT ACCOUNTS & I&E SYSTEM ARCHITECTURE
+         * ====================================================================
+         */
+
+        // APP STATE & DATABASE SIMULATION
+        const STORAGE_KEYS = {
+            TRANSACTIONS: 'fh_transactions_db',
+            CATEGORIES: 'fh_categories_db',
+            COMPANY: 'fh_company_settings',
+            AUDIT: 'fh_audit_logs',
+        };
+
+        // Application State
+        let state = {
+            currentView: 'dashboard',
+            period: 'this_month', // this_month, prev_month, this_quarter, this_year, prev_year, financial_year, all
+            searchQuery: '',
+            filterType: 'all', // all, income, expenditure
+            filterCategory: 'all',
+            company: {
+                name: 'Acme Enterprises Ltd',
+                currency: 'GBP',
+                currencySymbol: '£',
+                fyStartMonth: 4, // April (1-indexed)
+                role: 'Finance Manager'
+            },
+            categories: [],
+            transactions: [],
+            auditLogs: []
+        };
+
+        // Default Categories Configuration
+        const DEFAULT_CATEGORIES = [
+            // Income
+            { id: 'cat_inc_1', type: 'income', name: 'Sales & Client Revenue', active: true },
+            { id: 'cat_inc_2', type: 'income', name: 'Service Income & Retainers', active: true },
+            { id: 'cat_inc_3', type: 'income', name: 'Commission & Fees', active: true },
+            { id: 'cat_inc_4', type: 'income', name: 'Rental Income', active: true },
+            { id: 'cat_inc_5', type: 'income', name: 'Interest & Investment Return', active: true },
+            { id: 'cat_inc_6', type: 'income', name: 'Other Income', active: true },
+            // Expenditure
+            { id: 'cat_exp_1', type: 'expenditure', name: 'Staff & Payroll Salaries', active: true },
+            { id: 'cat_exp_2', type: 'expenditure', name: 'Rent & Office Premises', active: true },
+            { id: 'cat_exp_3', type: 'expenditure', name: 'Utilities (Gas, Electric, Water)', active: true },
+            { id: 'cat_exp_4', type: 'expenditure', name: 'Marketing & Advertising', active: true },
+            { id: 'cat_exp_5', type: 'expenditure', name: 'Software, Hosting & IT Services', active: true },
+            { id: 'cat_exp_6', type: 'expenditure', name: 'Accountancy & Legal Fees', active: true },
+            { id: 'cat_exp_7', type: 'expenditure', name: 'Travel & Accommodation', active: true },
+            { id: 'cat_exp_8', type: 'expenditure', name: 'Bank Charges & Merchant Fees', active: true },
+            { id: 'cat_exp_9', type: 'expenditure', name: 'Insurance & Licenses', active: true },
+            { id: 'cat_exp_10', type: 'expenditure', name: 'Office Supplies & Stationery', active: true },
+            { id: 'cat_exp_11', type: 'expenditure', name: 'Miscellaneous Expense', active: true }
+        ];
+
+        // INITIALIZATION (No Dummy Data Default)
+        function initApp() {
+            loadStateFromStorage();
+            updateCurrencyUI();
+            lucide.createIcons();
+            navigate('dashboard');
+        }
+
+        function loadStateFromStorage() {
+            const storedComp = localStorage.getItem(STORAGE_KEYS.COMPANY);
+            if (storedComp) state.company = JSON.parse(storedComp);
+
+            const storedCats = localStorage.getItem(STORAGE_KEYS.CATEGORIES);
+            state.categories = storedCats ? JSON.parse(storedCats) : [...DEFAULT_CATEGORIES];
+
+            const storedTxs = localStorage.getItem(STORAGE_KEYS.TRANSACTIONS);
+            state.transactions = storedTxs ? JSON.parse(storedTxs) : [];
+
+            const storedAudit = localStorage.getItem(STORAGE_KEYS.AUDIT);
+            state.auditLogs = storedAudit ? JSON.parse(storedAudit) : [];
+        }
+
+        function saveStateToStorage() {
+            localStorage.setItem(STORAGE_KEYS.COMPANY, JSON.stringify(state.company));
+            localStorage.setItem(STORAGE_KEYS.CATEGORIES, JSON.stringify(state.categories));
+            localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(state.transactions));
+            localStorage.setItem(STORAGE_KEYS.AUDIT, JSON.stringify(state.auditLogs));
+        }
+
+        function clearAllData() {
+            if (confirm('Are you sure you want to clear all transactions? This will leave your system completely blank for clean entry.')) {
+                state.transactions = [];
+                state.auditLogs = [];
+                saveStateToStorage();
+                logAudit('DATA_CLEAR', 'All user transactions cleared by user');
+                showToast('All transaction records cleared.', 'info');
+                navigate(state.currentView);
+            }
+        }
+
+        // NAVIGATION ENGINE
+        function navigate(viewName) {
+            state.currentView = viewName;
+
+            // Update Nav UI
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-brand-600/20', 'text-brand-500', 'text-white');
+                btn.classList.add('text-slate-400');
+            });
+            const activeBtn = document.getElementById(`nav-${viewName}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-brand-600/20', 'text-brand-500', 'text-white');
+                activeBtn.classList.remove('text-slate-400');
+            }
+
+            // Render view content
+            const mainView = document.getElementById('main-view');
+            switch (viewName) {
+                case 'dashboard':
+                    mainView.innerHTML = renderDashboardView();
+                    initDashboardCharts();
+                    break;
+                case 'transactions':
+                    mainView.innerHTML = renderTransactionsView();
+                    break;
+                case 'reports':
+                    mainView.innerHTML = renderReportsView();
+                    break;
+                case 'analysis':
+                    mainView.innerHTML = renderAnalysisView();
+                    initAnalysisCharts();
+                    break;
+                case 'categories':
+                    mainView.innerHTML = renderCategoriesView();
+                    break;
+                case 'audit':
+                    mainView.innerHTML = renderAuditView();
+                    break;
+                case 'settings':
+                    mainView.innerHTML = renderSettingsView();
+                    break;
+                default:
+                    mainView.innerHTML = renderDashboardView();
+            }
+
+            lucide.createIcons();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // FINANCIAL CALCULATIONS & ACCOUNTING LOGIC ENGINE
+        function getFilteredTransactions(period = state.period) {
+            let txs = state.transactions.filter(t => t.status === 'active');
+            const now = new Date('2026-09-04'); // Current date context
+
+            return txs.filter(t => {
+                const txDate = new Date(t.date);
+                if (isNaN(txDate)) return false;
+
+                switch (period) {
+                    case 'this_month':
+                        return txDate.getMonth() === now.getMonth() && txDate.getFullYear() === now.getFullYear();
+                    case 'prev_month': {
+                        const prevM = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                        return txDate.getMonth() === prevM.getMonth() && txDate.getFullYear() === prevM.getFullYear();
+                    }
+                    case 'this_quarter': {
+                        const currentQuarter = Math.floor(now.getMonth() / 3);
+                        const txQuarter = Math.floor(txDate.getMonth() / 3);
+                        return currentQuarter === txQuarter && txDate.getFullYear() === now.getFullYear();
+                    }
+                    case 'this_year':
+                        return txDate.getFullYear() === 2026;
+                    case 'prev_year':
+                        return txDate.getFullYear() === 2025;
+                    case 'financial_year': {
+                        // FY starting April 1st 2026 to March 31st 2027
+                        const fyStart = new Date(2026, 3, 1);
+                        const fyEnd = new Date(2027, 2, 31, 23, 59, 59);
+                        return txDate >= fyStart && txDate <= fyEnd;
+                    }
+                    case 'all':
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        function calculateFinancialSummary(period = state.period) {
+            const txs = getFilteredTransactions(period);
+
+            let totalIncome = 0;
+            let totalExpenditure = 0;
+
+            txs.forEach(t => {
+                if (t.items && Array.isArray(t.items) && t.items.length > 0) {
+                    const sum = t.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+                    if (t.type === 'income') totalIncome += sum;
+                    else if (t.type === 'expenditure') totalExpenditure += sum;
+                } else {
+                    const amt = parseFloat(t.amount) || 0;
+                    if (t.type === 'income') totalIncome += amt;
+                    else if (t.type === 'expenditure') totalExpenditure += amt;
+                }
+            });
+
+            const netProfit = totalIncome - totalExpenditure;
+
+            // Previous Period Comparison for Growth Rates
+            let prevPeriod = 'prev_month';
+            if (period === 'this_year') prevPeriod = 'prev_year';
+            
+            const prevTxs = getFilteredTransactions(prevPeriod);
+            let prevIncome = 0;
+            let prevExpenditure = 0;
+            
+            prevTxs.forEach(t => {
+                if (t.items && Array.isArray(t.items) && t.items.length > 0) {
+                    const sum = t.items.reduce((acc, curr) => acc + (parseFloat(curr.amount) || 0), 0);
+                    if (t.type === 'income') prevIncome += sum;
+                    else if (t.type === 'expenditure') prevExpenditure += sum;
+                } else {
+                    const amt = parseFloat(t.amount) || 0;
+                    if (t.type === 'income') prevIncome += amt;
+                    else if (t.type === 'expenditure') prevExpenditure += amt;
+                }
+            });
+
+            const incomeGrowth = prevIncome > 0 ? ((totalIncome - prevIncome) / prevIncome) * 100 : 0;
+            const expenseGrowth = prevExpenditure > 0 ? ((totalExpenditure - prevExpenditure) / prevExpenditure) * 100 : 0;
+
+            return {
+                totalIncome,
+                totalExpenditure,
+                netProfit,
+                incomeGrowth,
+                expenseGrowth,
+                transactionCount: txs.length
+            };
+        }
+
+        function getCategoryTotals(type, period = state.period) {
+            const txs = getFilteredTransactions(period).filter(t => t.type === type);
+            const totals = {};
+
+            txs.forEach(t => {
+                if (t.items && Array.isArray(t.items) && t.items.length > 0) {
+                    t.items.forEach(item => {
+                        totals[item.category_id] = (totals[item.category_id] || 0) + (parseFloat(item.amount) || 0);
+                    });
+                } else if (t.category_id) {
+                    totals[t.category_id] = (totals[t.category_id] || 0) + (parseFloat(t.amount) || 0);
+                }
+            });
+
+            return totals;
+        }
+
+        // UI HELPER FUNCTIONS & FORMATTERS
+        function formatCurrency(amount) {
+            const sym = state.company.currencySymbol || '£';
+            const val = parseFloat(amount) || 0;
+            return `${sym}${val.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const d = new Date(dateStr);
+            if (isNaN(d)) return dateStr;
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        }
+
+        function getCategoryName(catId) {
+            const cat = state.categories.find(c => c.id === catId);
+            return cat ? cat.name : 'Uncategorized';
+        }
+
+        function getTransactionCategoryLabel(t) {
+            if (t.items && Array.isArray(t.items) && t.items.length > 0) {
+                if (t.items.length === 1) {
+                    return getCategoryName(t.items[0].category_id);
+                }
+                const names = t.items.map(i => getCategoryName(i.category_id));
+                return `${t.items.length} Categories (${names.join(', ')})`;
+            }
+            return getCategoryName(t.category_id);
+        }
+
+        function updateCurrencyUI() {
+            document.querySelectorAll('.currency-symbol').forEach(el => {
+                el.textContent = state.company.currencySymbol;
+            });
+            const badge = document.getElementById('sidebar-currency-badge');
+            if (badge) badge.textContent = `${state.company.currency} (${state.company.currencySymbol})`;
+            
+            const compName = document.getElementById('sidebar-company-name');
+            if (compName) compName.textContent = state.company.name;
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bg = 'bg-slate-800 text-white';
+            if (type === 'success') bg = 'bg-emerald-600 text-white';
+            if (type === 'error') bg = 'bg-rose-600 text-white';
+            
+            toast.className = `pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-xl shadow-xl text-sm font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${bg}`;
+            toast.innerHTML = `<span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function logAudit(action, details) {
+            const entry = {
+                id: 'log_' + Date.now(),
+                timestamp: new Date().toISOString(),
+                user: state.company.role || 'Finance Admin',
+                action,
+                details
+            };
+            state.auditLogs.unshift(entry);
+            saveStateToStorage();
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('-translate-x-full');
+        }
+
+        function changeGlobalPeriod(newPeriod) {
+            state.period = newPeriod;
+            navigate(state.currentView);
+        }
+
+        function handleGlobalSearch(e) {
+            state.searchQuery = e.target.value.toLowerCase();
+            if (state.currentView === 'transactions') {
+                navigate('transactions');
+            }
+        }
+
+        // MULTI-CATEGORY MODAL & FORM CONTROLLER
+        let selectedCategoryIds = new Set();
+
+        function openTransactionModal(type, editTxId = null) {
+            const modal = document.getElementById('transaction-modal');
+            const form = document.getElementById('transaction-form');
+            form.reset();
+            
+            document.getElementById('tx-id').value = editTxId || '';
+            document.getElementById('tx-type').value = type;
+            
+            selectedCategoryIds.clear();
+
+            const isIncome = type === 'income';
+            document.getElementById('modal-title').textContent = editTxId ? (isIncome ? 'Edit Income Entry' : 'Edit Expenditure Entry') : (isIncome ? 'Add Income Entry' : 'Add Expenditure Entry');
+            
+            const headerBg = document.getElementById('modal-header-bg');
+            const typeIcon = document.getElementById('modal-type-icon');
+            
+            if (isIncome) {
+                headerBg.className = 'px-6 py-4 bg-income-600 text-white flex justify-between items-center shrink-0';
+                typeIcon.innerHTML = `<i data-lucide="arrow-down-left" class="w-5 h-5"></i>`;
+                document.getElementById('lbl-source-supplier').textContent = 'Customer / Payer Source';
+            } else {
+                headerBg.className = 'px-6 py-4 bg-expense-600 text-white flex justify-between items-center shrink-0';
+                typeIcon.innerHTML = `<i data-lucide="arrow-up-right" class="w-5 h-5"></i>`;
+                document.getElementById('lbl-source-supplier').textContent = 'Supplier / Payee Source';
+            }
+
+            // Populate category checkbox choices
+            const cats = state.categories.filter(c => c.type === type && c.active);
+            const choiceContainer = document.getElementById('multi-category-selection-container');
+            
+            choiceContainer.innerHTML = cats.map(c => `
+                <label class="flex items-center gap-2.5 p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 cursor-pointer select-none">
+                    <input type="checkbox" value="${c.id}" onchange="toggleCategorySelection('${c.id}', this.checked)" class="cat-checkbox rounded text-brand-600 focus:ring-brand-500 w-4 h-4">
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">${c.name}</span>
+                </label>
+            `).join('');
+
+            // Reset time scope radios
+            const scopeRadios = document.getElementsByName('tx-entry-scope');
+            scopeRadios[0].checked = true;
+            handleScopeChange();
+
+            // Set default date to today
+            document.getElementById('tx-date').value = new Date().toISOString().split('T')[0];
+
+            if (editTxId) {
+                const tx = state.transactions.find(t => t.id === editTxId);
+                if (tx) {
+                    if (tx.scope === 'monthly') {
+                        scopeRadios[1].checked = true;
+                        handleScopeChange();
+                        if (tx.date) {
+                            const [y, m] = tx.date.split('-');
+                            document.getElementById('tx-year').value = y;
+                            document.getElementById('tx-month').value = m;
+                        }
+                    } else {
+                        document.getElementById('tx-date').value = tx.date;
+                    }
+
+                    document.getElementById('tx-source').value = tx.source || '';
+                    document.getElementById('tx-payment-method').value = tx.payment_method || 'Bank Transfer';
+                    document.getElementById('tx-reference').value = tx.ref || '';
+                    document.getElementById('tx-attachment').value = tx.attachment || '';
+                    document.getElementById('tx-description').value = tx.desc || '';
+
+                    // Check categories & fill amounts
+                    if (tx.items && Array.isArray(tx.items) && tx.items.length > 0) {
+                        tx.items.forEach(item => {
+                            selectedCategoryIds.add(item.category_id);
+                        });
+                        renderAllocatedCategoryInputs();
+                        tx.items.forEach(item => {
+                            const input = document.getElementById(`amt_input_${item.category_id}`);
+                            if (input) input.value = item.amount;
+                        });
+                    } else if (tx.category_id) {
+                        selectedCategoryIds.add(tx.category_id);
+                        renderAllocatedCategoryInputs();
+                        const input = document.getElementById(`amt_input_${tx.category_id}`);
+                        if (input) input.value = tx.amount;
+                    }
+
+                    // Update checkboxes
+                    document.querySelectorAll('.cat-checkbox').forEach(cb => {
+                        cb.checked = selectedCategoryIds.has(cb.value);
+                    });
+
+                    document.getElementById('edit-reason-container').classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('edit-reason-container').classList.add('hidden');
+                renderAllocatedCategoryInputs();
+            }
+
+            calculateModalTotal();
+            lucide.createIcons();
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function handleScopeChange() {
+            const selectedScope = document.querySelector('input[name="tx-entry-scope"]:checked').value;
+            const onetimeBox = document.getElementById('scope-onetime-container');
+            const monthlyBox = document.getElementById('scope-monthly-container');
+
+            if (selectedScope === 'monthly') {
+                onetimeBox.classList.add('hidden');
+                monthlyBox.classList.remove('hidden');
+                document.getElementById('tx-date').removeAttribute('required');
+            } else {
+                onetimeBox.classList.remove('hidden');
+                monthlyBox.classList.add('hidden');
+                document.getElementById('tx-date').setAttribute('required', 'true');
+            }
+        }
+
+        function toggleCategorySelection(catId, isChecked) {
+            if (isChecked) {
+                selectedCategoryIds.add(catId);
+            } else {
+                selectedCategoryIds.delete(catId);
+            }
+            renderAllocatedCategoryInputs();
+        }
+
+        function renderAllocatedCategoryInputs() {
+            const listContainer = document.getElementById('category-allocations-list');
+            if (selectedCategoryIds.size === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-xs italic text-slate-400 p-2 text-center border border-dashed rounded-lg">
+                        No categories selected. Please tick at least one category above.
+                    </div>
+                `;
+                calculateModalTotal();
+                return;
+            }
+
+            let html = '';
+            selectedCategoryIds.forEach(catId => {
+                const catName = getCategoryName(catId);
+                html += `
+                    <div class="flex items-center gap-3 p-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200 flex-1 truncate">
+                            ☑ ${catName}
+                        </span>
+                        <div class="relative w-36">
+                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">${state.company.currencySymbol}</span>
+                            <input type="number" step="0.01" min="0" id="amt_input_${catId}" oninput="calculateModalTotal()" placeholder="0.00" required class="w-full pl-6 pr-2 py-1 bg-slate-50 dark:bg-slate-800 border rounded text-xs font-bold focus:ring-2 focus:ring-brand-500 text-right">
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = html;
+            calculateModalTotal();
+        }
+
+        function calculateModalTotal() {
+            let total = 0;
+            selectedCategoryIds.forEach(catId => {
+                const input = document.getElementById(`amt_input_${catId}`);
+                if (input) {
+                    const val = parseFloat(input.value) || 0;
+                    total += val;
+                }
+            });
+
+            const display = document.getElementById('tx-total-display');
+            if (display) {
+                display.textContent = formatCurrency(total);
+            }
+            return total;
+        }
+
+        function closeTransactionModal() {
+            const modal = document.getElementById('transaction-modal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        function saveTransaction(e) {
+            e.preventDefault();
+
+            if (selectedCategoryIds.size === 0) {
+                showToast('Please select at least one category.', 'error');
+                return;
+            }
+
+            const txId = document.getElementById('tx-id').value;
+            const type = document.getElementById('tx-type').value;
+            const scope = document.querySelector('input[name="tx-entry-scope"]:checked').value;
+
+            let dateStr = '';
+            if (scope === 'monthly') {
+                const month = document.getElementById('tx-month').value;
+                const year = document.getElementById('tx-year').value;
+                dateStr = `${year}-${month}-01`;
+            } else {
+                dateStr = document.getElementById('tx-date').value;
+            }
+
+            // Build items array
+            const items = [];
+            let totalAmount = 0;
+
+            selectedCategoryIds.forEach(catId => {
+                const input = document.getElementById(`amt_input_${catId}`);
+                const amt = input ? parseFloat(input.value) || 0 : 0;
+                items.push({
+                    category_id: catId,
+                    amount: amt
+                });
+                totalAmount += amt;
+            });
+
+            if (totalAmount <= 0) {
+                showToast('Please enter a valid amount greater than zero.', 'error');
+                return;
+            }
+
+            const source = document.getElementById('tx-source').value;
+            const payment_method = document.getElementById('tx-payment-method').value;
+            const ref = document.getElementById('tx-reference').value;
+            const attachment = document.getElementById('tx-attachment').value;
+            const desc = document.getElementById('tx-description').value;
+
+            if (txId) {
+                // Edit existing transaction
+                const index = state.transactions.findIndex(t => t.id === txId);
+                if (index !== -1) {
+                    const oldTx = state.transactions[index];
+                    const editReason = document.getElementById('tx-edit-reason').value || 'Correction';
+                    
+                    state.transactions[index] = {
+                        ...oldTx,
+                        scope,
+                        date: dateStr,
+                        type,
+                        amount: totalAmount,
+                        items,
+                        source,
+                        payment_method,
+                        ref,
+                        attachment,
+                        desc,
+                        updated_at: new Date().toISOString()
+                    };
+
+                    logAudit('TRANSACTION_EDIT', `Updated ${type} entry #${txId}. Reason: ${editReason}`);
+                    showToast('Transaction updated successfully', 'success');
+                }
+            } else {
+                // Create new multi-category transaction
+                const newTx = {
+                    id: 'tx_' + Date.now(),
+                    scope,
+                    type,
+                    date: dateStr,
+                    amount: totalAmount,
+                    items,
+                    category_id: items[0].category_id, // Backward compatibility primary category
+                    source,
+                    payment_method,
+                    ref,
+                    attachment,
+                    desc,
+                    status: 'active',
+                    created_at: new Date().toISOString()
+                };
+
+                state.transactions.unshift(newTx);
+                logAudit('TRANSACTION_ADD', `Added new ${type} entry [${items.length} categories, Total: ${formatCurrency(totalAmount)}]`);
+                showToast('Transaction saved successfully', 'success');
+            }
+
+            saveStateToStorage();
+            closeTransactionModal();
+            navigate(state.currentView);
+        }
+
+        function deleteTransaction(txId) {
+            if (confirm('Are you sure you want to delete this transaction record?')) {
+                const tx = state.transactions.find(t => t.id === txId);
+                if (tx) {
+                    tx.status = 'deleted';
+                    saveStateToStorage();
+                    logAudit('TRANSACTION_DELETE', `Deleted transaction #${txId} (${formatCurrency(tx.amount)})`);
+                    showToast('Transaction record deleted', 'info');
+                    navigate(state.currentView);
+                }
+            }
+        }
+
+        // VIEW RENDERERS
+        
+        // 1. DASHBOARD VIEW
+        function renderDashboardView() {
+            const summary = calculateFinancialSummary();
+            const incomeCats = getCategoryTotals('income');
+            const expCats = getCategoryTotals('expenditure');
+
+            const recentTxs = getFilteredTransactions().slice(0, 6);
+
+            return `
+                <!-- Period Header -->
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Management Accounts Dashboard</h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Financial performance overview and cash flows for ${state.company.name}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="px-3 py-1 bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 font-semibold text-xs rounded-full border border-brand-200 dark:border-brand-800">
+                            Active Period: ${state.period.replace('_', ' ').toUpperCase()}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- KPI Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Total Income Card -->
+                    <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Income</span>
+                                <h2 class="text-2xl font-black text-income-600 dark:text-income-500 mt-2 font-mono">${formatCurrency(summary.totalIncome)}</h2>
+                            </div>
+                            <div class="p-3 bg-income-50 dark:bg-income-950/50 rounded-xl text-income-600">
+                                <i data-lucide="trending-up" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-xs text-slate-500">
+                            <span class="font-bold ${summary.incomeGrowth >= 0 ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
+                                ${summary.incomeGrowth >= 0 ? '+' : ''}${summary.incomeGrowth.toFixed(1)}%
+                            </span>
+                            <span class="ml-1.5">vs previous comparison period</span>
+                        </div>
+                    </div>
+
+                    <!-- Total Expenditure Card -->
+                    <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Expenditure</span>
+                                <h2 class="text-2xl font-black text-expense-600 dark:text-expense-500 mt-2 font-mono">${formatCurrency(summary.totalExpenditure)}</h2>
+                            </div>
+                            <div class="p-3 bg-expense-50 dark:bg-expense-950/50 rounded-xl text-expense-600">
+                                <i data-lucide="trending-down" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-xs text-slate-500">
+                            <span class="font-bold ${summary.expenseGrowth <= 0 ? 'text-emerald-500' : 'text-rose-500'} flex items-center gap-0.5">
+                                ${summary.expenseGrowth >= 0 ? '+' : ''}${summary.expenseGrowth.toFixed(1)}%
+                            </span>
+                            <span class="ml-1.5">vs previous comparison period</span>
+                        </div>
+                    </div>
+
+                    <!-- Net Surplus / Profit Card -->
+                    <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Net Profit / Surplus</span>
+                                <h2 class="text-2xl font-black ${summary.netProfit >= 0 ? 'text-brand-600 dark:text-brand-400' : 'text-rose-600'} mt-2 font-mono">${formatCurrency(summary.netProfit)}</h2>
+                            </div>
+                            <div class="p-3 bg-brand-50 dark:bg-brand-950/50 rounded-xl text-brand-600">
+                                <i data-lucide="scale" class="w-6 h-6"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center text-xs text-slate-500">
+                            <span class="font-semibold text-slate-700 dark:text-slate-300">
+                                Net Margin: ${summary.totalIncome > 0 ? ((summary.netProfit / summary.totalIncome) * 100).toFixed(1) : 0}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visual Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-4">Income vs Expenditure Breakdown</h3>
+                        <div class="h-64">
+                            <canvas id="dashComparisonChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-4">Top Expenditure Categories</h3>
+                        <div class="h-64">
+                            <canvas id="dashExpenseCategoryChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Table -->
+                <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white">Recent Transactions</h3>
+                        <button onclick="navigate('transactions')" class="text-xs font-bold text-brand-600 hover:text-brand-700 flex items-center gap-1">
+                            View All <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+
+                    ${recentTxs.length === 0 ? `
+                        <div class="text-center py-8 text-slate-400 text-sm">
+                            No transactions recorded for this period. Click <strong>Add Income</strong> or <strong>Add Expenditure</strong> above to add entries.
+                        </div>
+                    ` : `
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead>
+                                    <tr class="border-b border-slate-200 dark:border-slate-800 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+                                        <th class="pb-3">Date</th>
+                                        <th class="pb-3">Type</th>
+                                        <th class="pb-3">Category Allocation</th>
+                                        <th class="pb-3">Source / Reference</th>
+                                        <th class="pb-3 text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                    ${recentTxs.map(t => `
+                                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/50">
+                                            <td class="py-3 font-medium">${formatDate(t.date)}</td>
+                                            <td class="py-3">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${t.type === 'income' ? 'bg-income-50 text-income-600 dark:bg-income-950/60' : 'bg-expense-50 text-expense-600 dark:bg-expense-950/60'}">
+                                                    ${t.type}
+                                                </span>
+                                            </td>
+                                            <td class="py-3 text-slate-600 dark:text-slate-300">${getTransactionCategoryLabel(t)}</td>
+                                            <td class="py-3 text-slate-500">${t.source || '-'} ${t.ref ? `<span class="text-slate-400 text-xs">(${t.ref})</span>` : ''}</td>
+                                            <td class="py-3 text-right font-bold font-mono ${t.type === 'income' ? 'text-income-600' : 'text-expense-600'}">
+                                                ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        function initDashboardCharts() {
+            const summary = calculateFinancialSummary();
+            const expTotals = getCategoryTotals('expenditure');
+
+            // Bar Chart Comparison
+            const ctx1 = document.getElementById('dashComparisonChart');
+            if (ctx1) {
+                new Chart(ctx1, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Income', 'Expenditure', 'Net Profit'],
+                        datasets: [{
+                            label: 'Amount (' + state.company.currencySymbol + ')',
+                            data: [summary.totalIncome, summary.totalExpenditure, summary.netProfit],
+                            backgroundColor: ['#16a34a', '#dc2626', '#0284c7'],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+
+            // Pie/Doughnut Chart Category breakdown
+            const ctx2 = document.getElementById('dashExpenseCategoryChart');
+            if (ctx2) {
+                const catLabels = [];
+                const catData = [];
+                
+                Object.keys(expTotals).forEach(catId => {
+                    catLabels.push(getCategoryName(catId));
+                    catData.push(expTotals[catId]);
+                });
+
+                new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: catLabels.length > 0 ? catLabels : ['No Expenses'],
+                        datasets: [{
+                            data: catData.length > 0 ? catData : [1],
+                            backgroundColor: ['#ef4444', '#f97316', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'right' } }
+                    }
+                });
+            }
+        }
+
+        // 2. TRANSACTIONS VIEW
+        function renderTransactionsView() {
+            let txs = getFilteredTransactions();
+
+            if (state.searchQuery) {
+                txs = txs.filter(t => 
+                    (t.source && t.source.toLowerCase().includes(state.searchQuery)) ||
+                    (t.ref && t.ref.toLowerCase().includes(state.searchQuery)) ||
+                    (t.desc && t.desc.toLowerCase().includes(state.searchQuery)) ||
+                    getTransactionCategoryLabel(t).toLowerCase().includes(state.searchQuery)
+                );
+            }
+
+            if (state.filterType !== 'all') {
+                txs = txs.filter(t => t.type === state.filterType);
+            }
+
+            return `
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Transaction Register</h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Itemized entries with multi-category split auditing</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <select onchange="state.filterType = this.value; navigate('transactions');" class="px-3 py-2 bg-slate-100 dark:bg-slate-800 border rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200">
+                            <option value="all" ${state.filterType === 'all' ? 'selected' : ''}>All Types</option>
+                            <option value="income" ${state.filterType === 'income' ? 'selected' : ''}>Income Only</option>
+                            <option value="expenditure" ${state.filterType === 'expenditure' ? 'selected' : ''}>Expenditure Only</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    ${txs.length === 0 ? `
+                        <div class="p-12 text-center text-slate-400">
+                            <i data-lucide="receipt" class="w-12 h-12 mx-auto mb-3 text-slate-300"></i>
+                            <p class="text-base font-semibold">No transactions found</p>
+                            <p class="text-xs text-slate-500 mt-1">Try adjusting your filters or search terms.</p>
+                        </div>
+                    ` : `
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 dark:bg-slate-900/80 text-slate-400 uppercase text-[10px] font-bold tracking-wider border-b border-slate-200 dark:border-slate-800">
+                                    <tr>
+                                        <th class="p-4">Date / Timing</th>
+                                        <th class="p-4">Type</th>
+                                        <th class="p-4">Categories Breakdown</th>
+                                        <th class="p-4">Party Source</th>
+                                        <th class="p-4">Reference</th>
+                                        <th class="p-4 text-right">Total Amount</th>
+                                        <th class="p-4 text-center">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                    ${txs.map(t => `
+                                        <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/50">
+                                            <td class="p-4 font-medium whitespace-nowrap">
+                                                <div>${formatDate(t.date)}</div>
+                                                <span class="text-[10px] text-slate-400 uppercase font-semibold">${t.scope === 'monthly' ? 'Monthly Entry' : 'One-Time'}</span>
+                                            </td>
+                                            <td class="p-4">
+                                                <span class="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase ${t.type === 'income' ? 'bg-income-50 text-income-600 dark:bg-income-950/60' : 'bg-expense-50 text-expense-600 dark:bg-expense-950/60'}">
+                                                    ${t.type}
+                                                </span>
+                                            </td>
+                                            <td class="p-4">
+                                                <div class="font-medium text-slate-800 dark:text-slate-200">${getTransactionCategoryLabel(t)}</div>
+                                                ${t.items && t.items.length > 1 ? `
+                                                    <div class="mt-1 space-y-0.5">
+                                                        ${t.items.map(i => `
+                                                            <div class="text-[11px] text-slate-500 flex justify-between gap-4 max-w-xs">
+                                                                <span>• ${getCategoryName(i.category_id)}</span>
+                                                                <span class="font-mono">${formatCurrency(i.amount)}</span>
+                                                            </div>
+                                                        `).join('')}
+                                                    </div>
+                                                ` : ''}
+                                            </td>
+                                            <td class="p-4 text-slate-600 dark:text-slate-300">${t.source || '-'}</td>
+                                            <td class="p-4 text-slate-500 font-mono text-xs">${t.ref || '-'}</td>
+                                            <td class="p-4 text-right font-bold font-mono ${t.type === 'income' ? 'text-income-600' : 'text-expense-600'}">
+                                                ${formatCurrency(t.amount)}
+                                            </td>
+                                            <td class="p-4 text-center whitespace-nowrap">
+                                                <button onclick="openTransactionModal('${t.type}', '${t.id}')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 hover:text-brand-600">
+                                                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                                                </button>
+                                                <button onclick="deleteTransaction('${t.id}')" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-500 hover:text-rose-600">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `}
+                </div>
+            `;
+        }
+
+        // 3. REPORTS VIEW
+        function renderReportsView() {
+            const summary = calculateFinancialSummary();
+            const incTotals = getCategoryTotals('income');
+            const expTotals = getCategoryTotals('expenditure');
+
+            const incCats = state.categories.filter(c => c.type === 'income');
+            const expCats = state.categories.filter(c => c.type === 'expenditure');
+
+            return `
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm no-print">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Management Accounts & Financial Statements</h1>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Formal Income & Expenditure Management Account statement</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold flex items-center gap-2">
+                            <i data-lucide="printer" class="w-4 h-4"></i> Print Statement
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-slate-950 p-8 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm print-container space-y-6">
+                    <div class="border-b border-slate-200 dark:border-slate-800 pb-6 flex justify-between items-start">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-wider">${state.company.name}</h2>
+                            <h3 class="text-sm font-semibold text-brand-600 mt-1">INCOME & EXPENDITURE ACCOUNT STATEMENT</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Reporting Period: ${state.period.replace('_', ' ').toUpperCase()}</p>
+                        </div>
+                        <div class="text-right text-xs text-slate-400">
+                            <div>Generated: ${new Date().toLocaleDateString('en-GB')}</div>
+                            <div>Currency: ${state.company.currency} (${state.company.currencySymbol})</div>
+                        </div>
+                    </div>
+
+                    <!-- Income Section -->
+                    <div>
+                        <h4 class="text-sm font-bold uppercase tracking-wider text-income-700 bg-income-50 dark:bg-income-950/40 p-2 rounded-lg mb-3">1. Income Account</h4>
+                        <table class="w-full text-sm">
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                ${incCats.map(cat => {
+                                    const amt = incTotals[cat.id] || 0;
+                                    return `
+                                        <tr>
+                                            <td class="py-2.5 text-slate-700 dark:text-slate-300 font-medium">${cat.name}</td>
+                                            <td class="py-2.5 text-right font-mono">${formatCurrency(amt)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                                <tr class="font-bold border-t-2 border-slate-300 dark:border-slate-700">
+                                    <td class="py-3 text-slate-900 dark:text-white uppercase tracking-wider">Total Income</td>
+                                    <td class="py-3 text-right font-mono text-income-600 text-base">${formatCurrency(summary.totalIncome)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Expenditure Section -->
+                    <div>
+                        <h4 class="text-sm font-bold uppercase tracking-wider text-expense-700 bg-expense-50 dark:bg-expense-950/40 p-2 rounded-lg mb-3">2. Expenditure Account</h4>
+                        <table class="w-full text-sm">
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                ${expCats.map(cat => {
+                                    const amt = expTotals[cat.id] || 0;
+                                    return `
+                                        <tr>
+                                            <td class="py-2.5 text-slate-700 dark:text-slate-300 font-medium">${cat.name}</td>
+                                            <td class="py-2.5 text-right font-mono">${formatCurrency(amt)}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                                <tr class="font-bold border-t-2 border-slate-300 dark:border-slate-700">
+                                    <td class="py-3 text-slate-900 dark:text-white uppercase tracking-wider">Total Expenditure</td>
+                                    <td class="py-3 text-right font-mono text-expense-600 text-base">${formatCurrency(summary.totalExpenditure)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Net Summary Section -->
+                    <div class="p-4 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                        <div>
+                            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">NET SURPLUS / (DEFICIT)</span>
+                            <div class="text-xs text-slate-400">Total Income minus Total Expenditure</div>
+                        </div>
+                        <div class="text-xl font-black font-mono ${summary.netProfit >= 0 ? 'text-brand-600' : 'text-rose-600'}">
+                            ${formatCurrency(summary.netProfit)}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. ANALYSIS VIEW
+        function renderAnalysisView() {
+            return `
+                <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Financial Insights & Trends</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Multi-category performance breakdown over time</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-4">Monthly Income Trajectory</h3>
+                        <div class="h-64">
+                            <canvas id="analysisIncomeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 class="text-base font-bold text-slate-900 dark:text-white mb-4">Expenditure Dynamics</h3>
+                        <div class="h-64">
+                            <canvas id="analysisExpenseChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function initAnalysisCharts() {
+            const ctx1 = document.getElementById('analysisIncomeChart');
+            if (ctx1) {
+                new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+                        datasets: [{
+                            label: 'Income',
+                            data: [12000, 15000, 14000, 18000, 16000, 19500, 21000, 18500, 22700],
+                            borderColor: '#16a34a',
+                            backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+
+            const ctx2 = document.getElementById('analysisExpenseChart');
+            if (ctx2) {
+                new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'],
+                        datasets: [{
+                            label: 'Expenditure',
+                            data: [10000, 11000, 10500, 12000, 11500, 12700, 16200, 14680, 14490],
+                            borderColor: '#dc2626',
+                            backgroundColor: 'rgba(220, 38, 38, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+        }
+
+        // 5. CATEGORIES VIEW
+        function renderCategoriesView() {
+            const incCats = state.categories.filter(c => c.type === 'income');
+            const expCats = state.categories.filter(c => c.type === 'expenditure');
+
+            return `
+                <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Category Management</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Configured account classification structure</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Income Categories -->
+                    <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 class="text-base font-bold text-income-600 mb-4 flex items-center gap-2">
+                            <i data-lucide="tag" class="w-4 h-4"></i> Income Categories
+                        </h3>
+                        <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+                            ${incCats.map(c => `
+                                <li class="py-2.5 flex justify-between items-center text-sm">
+                                    <span class="font-medium text-slate-800 dark:text-slate-200">${c.name}</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-600">Active</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+
+                    <!-- Expenditure Categories -->
+                    <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <h3 class="text-base font-bold text-expense-600 mb-4 flex items-center gap-2">
+                            <i data-lucide="tag" class="w-4 h-4"></i> Expenditure Categories
+                        </h3>
+                        <ul class="divide-y divide-slate-100 dark:divide-slate-800">
+                            ${expCats.map(c => `
+                                <li class="py-2.5 flex justify-between items-center text-sm">
+                                    <span class="font-medium text-slate-800 dark:text-slate-200">${c.name}</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-600">Active</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 6. AUDIT VIEW
+        function renderAuditView() {
+            return `
+                <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">System Audit Trail</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Immutable ledger of system entries and edits</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-50 dark:bg-slate-900/80 text-slate-400 uppercase text-[10px] font-bold tracking-wider">
+                                <tr>
+                                    <th class="p-4">Timestamp</th>
+                                    <th class="p-4">User Role</th>
+                                    <th class="p-4">Action</th>
+                                    <th class="p-4">Audit Log Details</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60">
+                                ${state.auditLogs.length === 0 ? `
+                                    <tr><td colspan="4" class="p-6 text-center text-slate-400">No audit log entries recorded.</td></tr>
+                                ` : state.auditLogs.map(log => `
+                                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-900/50">
+                                        <td class="p-4 font-mono text-xs text-slate-500">${new Date(log.timestamp).toLocaleString('en-GB')}</td>
+                                        <td class="p-4 font-semibold text-slate-700 dark:text-slate-300">${log.user}</td>
+                                        <td class="p-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">${log.action}</span></td>
+                                        <td class="p-4 text-slate-600 dark:text-slate-300">${log.details}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 7. SETTINGS VIEW
+        function renderSettingsView() {
+            return `
+                <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Organization Settings</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">System preferences and reporting entity parameters</p>
+                </div>
+
+                <div class="bg-white dark:bg-slate-950 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-xl">
+                    <form onsubmit="saveSettings(event)" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Company / Entity Name</label>
+                            <input type="text" id="set-company-name" value="${state.company.name}" required class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Currency Code</label>
+                                <input type="text" id="set-currency" value="${state.company.currency}" required class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">Currency Symbol</label>
+                                <input type="text" id="set-symbol" value="${state.company.currencySymbol}" required class="w-full px-3 py-2 border rounded-lg dark:bg-slate-900 dark:border-slate-700 text-sm">
+                            </div>
+                        </div>
+                        <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm rounded-lg shadow-sm">
+                            Save Settings
+                        </button>
+                    </form>
+                </div>
+            `;
+        }
+
+        function saveSettings(e) {
+            e.preventDefault();
+            state.company.name = document.getElementById('set-company-name').value;
+            state.company.currency = document.getElementById('set-currency').value;
+            state.company.currencySymbol = document.getElementById('set-symbol').value;
+            
+            saveStateToStorage();
+            updateCurrencyUI();
+            logAudit('SETTINGS_UPDATE', 'Updated company profile parameters');
+            showToast('Settings saved successfully', 'success');
+        }
+
+        // APPLICATION LAUNCH
+        window.onload = initApp;
+    </script>
+</body>
+</html>
